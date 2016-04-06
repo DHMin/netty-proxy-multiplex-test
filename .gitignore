@@ -1,51 +1,21 @@
-
-.metadata
-bin/
-tmp/
-*.tmp
-*.bak
-*.swp
-*~.nib
-local.properties
-.settings/
-.loadpath
-.recommenders
-
-# Eclipse Core
+*.class
 .project
+*.iml
 
-# External tool builders
-.externalToolBuilders/
+/.settings
+/.target
+/.classpath
 
-# Locally stored "Eclipse launch configurations"
-*.launch
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
 
-# PyDev specific (Python IDE for Eclipse)
-*.pydevproject
+# Package Files #
+*.jar
+*.war
+*.ear
 
-# CDT-specific (C/C++ Development Tooling)
-.cproject
-
-# JDT-specific (Eclipse Java Development Tools)
-.classpath
-
-# Java annotation processor (APT)
-.factorypath
-
-# PDT-specific (PHP Development Tools)
-.buildpath
-
-# sbteclipse plugin
-.target
-
-# Tern plugin
-.tern-project
-
-# TeXlipse plugin
-.texlipse
-
-# STS (Spring Tool Suite)
-.springBeans
-
-# Code Recommenders
-.recommenders/
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+bin/
+target/
+deploy/
