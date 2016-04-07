@@ -1,4 +1,4 @@
-package com.dhmin.test.netty.proxy.multiplex.multiconnect;
+package com.dhmin.test.netty.proxy.multiplexing.multiconnect;
 
 import static org.junit.Assert.*;
 
@@ -7,7 +7,9 @@ import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
 
-import com.dhmin.test.netty.proxy.multiplex.multiconnect.MultiConnectServerHandler.ProxyHandler;
+import com.dhmin.test.netty.proxy.multiplexing.multiconnect.MultiConnectBackendServer;
+import com.dhmin.test.netty.proxy.multiplexing.multiconnect.MultiConnectServer;
+import com.dhmin.test.netty.proxy.multiplexing.multiconnect.MultiConnectServerHandler.ProxyHandler;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;

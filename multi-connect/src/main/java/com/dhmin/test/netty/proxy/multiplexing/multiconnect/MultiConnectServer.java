@@ -1,4 +1,4 @@
-package com.dhmin.test.netty.proxy.multiplex.multiconnect;
+package com.dhmin.test.netty.proxy.multiplexing.multiconnect;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,13 +17,13 @@ import io.netty.handler.logging.LoggingHandler;
 /**
  * @author DHMin
  */
-public class MultiConnectBackendServer implements Runnable {
-	private static final Logger log = LoggerFactory.getLogger(MultiConnectBackendServer.class);
+public class MultiConnectServer implements Runnable {
+	private static final Logger log = LoggerFactory.getLogger(MultiConnectServer.class);
 
-	private static final int PORT = 11000;
+	private static final int PORT = 10000;
 
 	public static void main(String[] args) {
-		new MultiConnectBackendServer().run();
+		new MultiConnectServer().run();
 	}
 
 	@Override
@@ -39,7 +39,7 @@ public class MultiConnectBackendServer implements Runnable {
 			 .childHandler(new ChannelInitializer<SocketChannel>() {
 				 @Override
 				 protected void initChannel(SocketChannel ch) throws Exception {
-					 ch.pipeline().addLast(new MultiConnectBackendServerHandler());
+					 ch.pipeline().addLast(new MultiConnectServerHandler());
 				 }
 			 })
 			 .option(ChannelOption.SO_BACKLOG, 128)

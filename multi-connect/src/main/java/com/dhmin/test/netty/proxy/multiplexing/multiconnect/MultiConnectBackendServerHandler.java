@@ -1,4 +1,4 @@
-package com.dhmin.test.netty.proxy.multiplex.multiconnect;
+package com.dhmin.test.netty.proxy.multiplexing.multiconnect;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

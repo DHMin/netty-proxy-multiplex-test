@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>com.dhmin.test</groupId>
-		<artifactId>netty-proxy-multiplex</artifactId>
+		<artifactId>netty-proxy-multiplexing</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 	<artifactId>multi-connect</artifactId>
