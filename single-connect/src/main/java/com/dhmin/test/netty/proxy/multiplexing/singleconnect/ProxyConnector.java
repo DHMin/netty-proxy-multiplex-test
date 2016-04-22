@@ -83,7 +83,7 @@ public class ProxyConnector {
 	}
 
 	@Value
-	public class ProxyMessage {
+	public static class ProxyMessage {
 		private Channel channel;
 		private ByteBuf byteBuf;
 	}
