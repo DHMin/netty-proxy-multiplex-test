@@ -13,10 +13,12 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.ReferenceCountUtil;
+import lombok.Value;
 
 public class ProxyConnector {
 	private static final Logger log = LoggerFactory.getLogger(SingleConnectServer.class);
@@ -63,5 +65,26 @@ public class ProxyConnector {
 			channelHashCodeMap.get(channelHashCode).writeAndFlush(in);
 			ReferenceCountUtil.safeRelease(in);
 		}
+
+		@Override
+		public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) throws Exception {
+			if (msg instanceof ProxyMessage) {
+				ProxyMessage pMsg = (ProxyMessage) msg;
+				ByteBuf out = ctx.alloc().buffer();
+				out.writeInt(pMsg.channel.hashCode());
+				out.writeBytes(pMsg.byteBuf);
+				super.write(ctx, out, promise);
+				ReferenceCountUtil.safeRelease(pMsg.byteBuf);
+			} else {
+				super.write(ctx, msg, promise);
+			}
+
+		}
+	}
+
+	@Value
+	public class ProxyMessage {
+		private Channel channel;
+		private ByteBuf byteBuf;
 	}
 }
