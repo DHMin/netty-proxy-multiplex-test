@@ -1,15 +1,10 @@
 package com.dhmin.test.netty.proxy.multiplexing.multiconnect;
 
-import static org.junit.Assert.*;
-
 import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
 import org.junit.Before;
-
-import com.dhmin.test.netty.proxy.multiplexing.multiconnect.MultiConnectBackendServer;
-import com.dhmin.test.netty.proxy.multiplexing.multiconnect.MultiConnectServer;
-import com.dhmin.test.netty.proxy.multiplexing.multiconnect.MultiConnectServerHandler.ProxyHandler;
+import org.junit.Test;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -21,9 +16,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import junit.framework.Test;
 import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 /**
  * @author DHMin
@@ -51,7 +44,7 @@ public class MultiConnectTest extends TestCase {
 		serverThread.join();
 	}
 
-	@org.junit.Test
+	@Test
 	public void test() throws Exception {
 		EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
 		Bootstrap b = new Bootstrap();
@@ -63,7 +56,14 @@ public class MultiConnectTest extends TestCase {
 		 .handler(new ChannelInboundHandlerAdapter() {
 			 @Override
 			 public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-				 System.out.println(msg);
+				 ByteBuf in = (ByteBuf) msg;
+				 byte[] b = new byte[in.readableBytes()];
+				 in.readBytes(b);
+				 System.out.println(new String(b));
+				 TimeUnit.MILLISECONDS.sleep(500);
+				 ByteBuf out = ctx.alloc().buffer();
+				 out.writeBytes(b);
+				 ctx.channel().writeAndFlush(out);
 			 }
 		 });
 
@@ -75,7 +75,9 @@ public class MultiConnectTest extends TestCase {
 		buf.writeBytes("hi".getBytes());
 
 		channel.writeAndFlush(buf).sync();
-		
+
 		TimeUnit.SECONDS.sleep(3);
+
+		channel.close();
 	}
 }

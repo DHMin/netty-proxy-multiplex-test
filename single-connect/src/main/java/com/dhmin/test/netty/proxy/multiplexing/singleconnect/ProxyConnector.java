@@ -63,7 +63,6 @@ public class ProxyConnector {
 			ByteBuf in = (ByteBuf) msg;
 			int channelHashCode = in.readInt();
 			channelHashCodeMap.get(channelHashCode).writeAndFlush(in);
-			ReferenceCountUtil.safeRelease(in);
 		}
 
 		@Override

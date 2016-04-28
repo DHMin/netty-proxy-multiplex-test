@@ -3,6 +3,8 @@ package com.dhmin.test.netty.proxy.multiplexing.singleconnect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.dhmin.test.netty.proxy.multiplexing.singleconnect.ProxyConnector.ProxyMessage;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -38,10 +40,6 @@ public class SingleConnectServerHandler extends ChannelInboundHandlerAdapter {
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		ByteBuf in = (ByteBuf) msg;
 		log.info("{} READ: {}", ctx.channel(), in);
-		ByteBuf out = ctx.alloc().buffer();
-		out.writeInt(ctx.channel().hashCode());
-		in.readBytes(out);
-		ReferenceCountUtil.safeRelease(in);
-		proxyChannel.writeAndFlush(out);
+		proxyChannel.writeAndFlush(new ProxyMessage(ctx.channel(), in));
 	}
 }
