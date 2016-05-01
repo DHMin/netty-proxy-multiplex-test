@@ -1,10 +1,14 @@
 package com.dhmin.test.netty.proxy.multiplexing.singleconnect;
 
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.dhmin.test.netty.proxy.multiplexing.singleconnect.ProxyConnector.ProxyMessage;
+import com.dhmin.test.netty.proxy.multiplexing.singleconnect.ProxyConnector.ProxyMessageCodec;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -23,6 +27,7 @@ import io.netty.channel.local.LocalServerChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.AttributeKey;
@@ -37,7 +42,7 @@ public class SingleConnectBackendServer implements Runnable {
 	private static final LocalAddress LOCAL_ADDR = new LocalAddress(LOCAL_PORT);
 
 	private static final AttributeKey<Integer> ID_KEY = AttributeKey.newInstance("ID_KEY");
-	private static final AttributeKey<Channel> PYSICAL_CHANNEL = AttributeKey.newInstance("PYSICAL_CHANNEL");
+	private static final AttributeKey<Channel> FRONT_CHANNEL = AttributeKey.newInstance("PYSICAL_CHANNEL");
 
 	public static void main(String[] args) {
 		new SingleConnectBackendServer().run();
@@ -88,7 +93,8 @@ public class SingleConnectBackendServer implements Runnable {
 		 .childHandler(new ChannelInitializer<SocketChannel>() {
 			 @Override
 			 protected void initChannel(SocketChannel ch) throws Exception {
-				 ch.pipeline().addLast(new PysicalServerHandler());
+				 ch.pipeline().addLast(new ProxyMessageDecoder(),
+				                       new FrontServerHandler());
 			 }
 		 })
 		 .option(ChannelOption.SO_BACKLOG, 128)
@@ -97,7 +103,7 @@ public class SingleConnectBackendServer implements Runnable {
 		return b.bind(PYSICAL_PORT).sync();
 	}
 
-	public static class PysicalServerHandler extends ChannelInboundHandlerAdapter {
+	public static class FrontServerHandler extends ChannelInboundHandlerAdapter {
 		private static final ConcurrentMap<Integer, Channel> LOCAL_CHANNEL_MAP = new ConcurrentHashMap<>();
 
 		private EventLoopGroup eventGroup = new NioEventLoopGroup();
@@ -126,30 +132,32 @@ public class SingleConnectBackendServer implements Runnable {
 
 		@Override
 		public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-			ByteBuf in = (ByteBuf) msg;
+			ProxyMessage pMsg = (ProxyMessage) msg;
 			try {
-				int id = in.readInt();
-				Channel localChannel = LOCAL_CHANNEL_MAP.get(id);
-				if (localChannel != null) {
-					localChannel = createLocalChannel();
-					localChannel.attr(ID_KEY).set(id);
-					localChannel.attr(PYSICAL_CHANNEL).set(ctx.channel());
-					Channel prevChannel = LOCAL_CHANNEL_MAP.put(id, localChannel);
-					if (prevChannel != null) {
-						prevChannel.close();
-					}
-				}
+				int id = pMsg.getChannelHashCode();
+				Channel channel = ctx.channel();
+				Channel localChannel = getLocalChannel(channel, id);
 
 				ByteBuf buf = localChannel.alloc().buffer();
-				buf.writeBytes(in);
+				buf.writeBytes(pMsg.getByteBuf());
 				localChannel.writeAndFlush(buf);
 			} finally {
-				ReferenceCountUtil.safeRelease(in);
+				ReferenceCountUtil.safeRelease(pMsg.getByteBuf());
 			}
 		}
 
-		private Channel createLocalChannel() throws InterruptedException {
-			return cb.connect(LOCAL_ADDR).sync().channel();
+		private synchronized Channel getLocalChannel(Channel channel, int id) throws InterruptedException {
+			Channel localChannel = LOCAL_CHANNEL_MAP.get(id);
+			if (localChannel == null) {
+				localChannel = cb.connect(LOCAL_ADDR).sync().channel();
+				localChannel.attr(ID_KEY).set(id);
+				localChannel.attr(FRONT_CHANNEL).set(channel);
+				Channel prevChannel = LOCAL_CHANNEL_MAP.put(id, localChannel);
+				if (prevChannel != null) {
+					prevChannel.close();
+				}
+			}
+			return localChannel;
 		}
 	}
 
@@ -172,13 +180,33 @@ public class SingleConnectBackendServer implements Runnable {
 				Channel channel = ctx.channel();
 				Integer id = channel.attr(ID_KEY).get();
 
-				Channel pChannel = channel.attr(PYSICAL_CHANNEL).get();
-				ByteBuf out = pChannel.alloc().buffer();
+				Channel fChannel = channel.attr(FRONT_CHANNEL).get();
+				ByteBuf out = fChannel.alloc().buffer();
 				out.writeInt(id);
+				out.writeInt(in.readableBytes());
 				out.writeBytes(in);
-				pChannel.writeAndFlush(out);
+				fChannel.writeAndFlush(out);
 			} finally {
 				ReferenceCountUtil.safeRelease(in);
+			}
+		}
+
+	}
+
+	public static class ProxyMessageDecoder extends ByteToMessageDecoder {
+
+		@Override
+		protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+			in.markReaderIndex();
+			try {
+				int channelHashCode = in.readInt();
+				int bodyLength = in.readInt();
+				ByteBuf buf = ctx.alloc().buffer(bodyLength);
+				in.readBytes(buf, bodyLength);
+
+				out.add(new ProxyMessage(channelHashCode, bodyLength, buf));
+			} catch (Exception e) {
+				in.resetReaderIndex();
 			}
 		}
 
