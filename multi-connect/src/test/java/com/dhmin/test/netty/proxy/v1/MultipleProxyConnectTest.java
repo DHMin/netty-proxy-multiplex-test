@@ -1,4 +1,4 @@
-package com.dhmin.test.netty.proxy.multiplexing.multiconnect;
+package com.dhmin.test.netty.proxy.v1;
 
 import java.util.concurrent.TimeUnit;
 
@@ -21,15 +21,15 @@ import junit.framework.TestCase;
 /**
  * @author DHMin
  */
-public class MultiConnectTest extends TestCase {
+public class MultipleProxyConnectTest extends TestCase {
 
 	private Thread serverThread;
 	private Thread backendServerThread;
 
 	@Before
 	public void setUp() throws Exception {
-		serverThread = new Thread(new MultiConnectServer());
-		backendServerThread = new Thread(new MultiConnectBackendServer());
+		serverThread = new Thread(new MultipleProxyConnectServer());
+		backendServerThread = new Thread(new MultipleProxyConnectBackendServer());
 
 		serverThread.start();
 		backendServerThread.start();

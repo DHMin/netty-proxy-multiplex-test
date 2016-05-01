@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>com.dhmin.test</groupId>
-		<artifactId>netty-proxy-multiplexing</artifactId>
+		<artifactId>netty-proxy</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 	<artifactId>single-connect</artifactId>

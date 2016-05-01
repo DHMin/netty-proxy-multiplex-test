@@ -1,4 +1,4 @@
-package com.dhmin.test.netty.proxy.multiplexing.multiconnect;
+package com.dhmin.test.netty.proxy.v1;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,8 +9,8 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 /**
  * @author DHMin
  */
-public class MultiConnectBackendServerHandler extends ChannelInboundHandlerAdapter {
-	private static final Logger log = LoggerFactory.getLogger(MultiConnectBackendServerHandler.class);
+public class MultipleProxyConnectBackendServerHandler extends ChannelInboundHandlerAdapter {
+	private static final Logger log = LoggerFactory.getLogger(MultipleProxyConnectBackendServerHandler.class);
 
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {

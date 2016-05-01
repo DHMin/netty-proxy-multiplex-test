@@ -1,10 +1,13 @@
-package com.dhmin.test.netty.proxy.multiplexing.singleconnect;
+package com.dhmin.test.netty.proxy.v2;
 
 import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.dhmin.test.netty.proxy.v2.SingleProxyConnectBackendServer;
+import com.dhmin.test.netty.proxy.v2.SingleProxyConnectServer;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -21,19 +24,19 @@ import junit.framework.TestCase;
 /**
  * @author DHMin
  */
-public class SingleConnetTest extends TestCase {
+public class SingleProxyConnetTest extends TestCase {
 
 	private Thread serverThread;
 	private Thread backendServerThread;
 
 	@Before
 	public void setUp() throws Exception {
-		backendServerThread = new Thread(new SingleConnectBackendServer());
+		backendServerThread = new Thread(new SingleProxyConnectBackendServer());
 		backendServerThread.start();
 
 		TimeUnit.MILLISECONDS.sleep(500);
 
-		serverThread = new Thread(new SingleConnectServer());
+		serverThread = new Thread(new SingleProxyConnectServer());
 		serverThread.start();
 	}
 

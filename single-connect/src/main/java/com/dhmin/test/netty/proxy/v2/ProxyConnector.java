@@ -1,4 +1,4 @@
-package com.dhmin.test.netty.proxy.multiplexing.singleconnect;
+package com.dhmin.test.netty.proxy.v2;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.qos.logback.core.util.TimeUtil;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
@@ -17,17 +16,17 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.ByteToMessageCodec;
 import io.netty.util.ReferenceCountUtil;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 
+/**
+ * @author DHMin
+ */
 public class ProxyConnector {
-	private static final Logger log = LoggerFactory.getLogger(SingleConnectServer.class);
+	private static final Logger log = LoggerFactory.getLogger(SingleProxyConnectServer.class);
 
 	private static final String BACKEND_ADDR = "127.0.0.1";
 	private static final int BACKEND_PORT = 21000;
@@ -84,37 +83,9 @@ public class ProxyConnector {
 			ProxyMessage pMsg = (ProxyMessage) msg;
 			channelHashCodeMap.get(pMsg.getChannelHashCode()).writeAndFlush(pMsg.getByteBuf());
 		}
-
-		// @Override
-		// public void write(ChannelHandlerContext ctx, Object msg,
-		// ChannelPromise promise) throws Exception {
-		// if (msg instanceof ProxyMessage) {
-		// ProxyMessage pMsg = (ProxyMessage) msg;
-		// ByteBuf out = ctx.alloc().buffer();
-		// out.writeInt(pMsg.channelHashCode);
-		// out.writeInt(pMsg.bodyLength);
-		// out.writeBytes(pMsg.byteBuf);
-		// ReferenceCountUtil.safeRelease(pMsg.byteBuf);
-		// super.write(ctx, out, promise);
-		// }
-		// }
 	}
 
-	@Getter
-	@AllArgsConstructor
-	public static class ProxyMessage {
-		private int channelHashCode;
-		private int bodyLength;
-		private ByteBuf byteBuf;
-
-		public ProxyMessage(Channel channel, ByteBuf byteBuf) {
-			this.channelHashCode = channel.hashCode();
-			this.bodyLength = byteBuf.readableBytes();
-			this.byteBuf = byteBuf;
-		}
-	}
-
-	public static class ProxyMessageCodec extends ByteToMessageCodec<ProxyMessage> {
+	class ProxyMessageCodec extends ByteToMessageCodec<ProxyMessage> {
 
 		@Override
 		protected void encode(ChannelHandlerContext ctx, ProxyMessage msg, ByteBuf out) throws Exception {

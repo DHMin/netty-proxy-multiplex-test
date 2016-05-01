@@ -1,14 +1,10 @@
-package com.dhmin.test.netty.proxy.multiplexing.singleconnect;
+package com.dhmin.test.netty.proxy.v2;
 
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.dhmin.test.netty.proxy.multiplexing.singleconnect.ProxyConnector.ProxyMessage;
-import com.dhmin.test.netty.proxy.multiplexing.singleconnect.ProxyConnector.ProxyMessageCodec;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
@@ -27,14 +23,16 @@ import io.netty.channel.local.LocalServerChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 
-public class SingleConnectBackendServer implements Runnable {
-	private static final Logger log = LoggerFactory.getLogger(SingleConnectBackendServer.class);
+/**
+ * @author DHMin
+ */
+public class SingleProxyConnectBackendServer implements Runnable {
+	private static final Logger log = LoggerFactory.getLogger(SingleProxyConnectBackendServer.class);
 
 	private static final int PYSICAL_PORT = 21000;
 	private static final String LOCAL_PORT = "local_server";
@@ -42,10 +40,10 @@ public class SingleConnectBackendServer implements Runnable {
 	private static final LocalAddress LOCAL_ADDR = new LocalAddress(LOCAL_PORT);
 
 	private static final AttributeKey<Integer> ID_KEY = AttributeKey.newInstance("ID_KEY");
-	private static final AttributeKey<Channel> FRONT_CHANNEL = AttributeKey.newInstance("PYSICAL_CHANNEL");
+	private static final AttributeKey<Channel> FRONT_CHANNEL = AttributeKey.newInstance("FRONT_CHANNEL");
 
 	public static void main(String[] args) {
-		new SingleConnectBackendServer().run();
+		new SingleProxyConnectBackendServer().run();
 	}
 
 	@Override
@@ -55,7 +53,7 @@ public class SingleConnectBackendServer implements Runnable {
 		EventLoopGroup localServerEventGroup = new LocalEventLoopGroup();
 
 		try {
-			ChannelFuture frontServerCloseFuture = runFrontServer(bossGroup, workerGroup);
+			ChannelFuture frontServerCloseFuture = runServer(bossGroup, workerGroup);
 			ChannelFuture localServerCloseFuture = runLocalServer(localServerEventGroup);
 
 			frontServerCloseFuture.channel().closeFuture().sync();
@@ -84,7 +82,7 @@ public class SingleConnectBackendServer implements Runnable {
 		return b.bind(LOCAL_ADDR).sync();
 	}
 
-	private ChannelFuture runFrontServer(EventLoopGroup bossGroup, EventLoopGroup workerGroup)
+	private ChannelFuture runServer(EventLoopGroup bossGroup, EventLoopGroup workerGroup)
 			throws InterruptedException {
 		ServerBootstrap b = new ServerBootstrap();
 		b.group(bossGroup, workerGroup)
@@ -94,7 +92,7 @@ public class SingleConnectBackendServer implements Runnable {
 			 @Override
 			 protected void initChannel(SocketChannel ch) throws Exception {
 				 ch.pipeline().addLast(new ProxyMessageDecoder(),
-				                       new FrontServerHandler());
+									   new SingleProxyConnectBackendServerHandler());
 			 }
 		 })
 		 .option(ChannelOption.SO_BACKLOG, 128)
@@ -103,8 +101,8 @@ public class SingleConnectBackendServer implements Runnable {
 		return b.bind(PYSICAL_PORT).sync();
 	}
 
-	public static class FrontServerHandler extends ChannelInboundHandlerAdapter {
-		private static final ConcurrentMap<Integer, Channel> LOCAL_CHANNEL_MAP = new ConcurrentHashMap<>();
+	class SingleProxyConnectBackendServerHandler extends ChannelInboundHandlerAdapter {
+		private final ConcurrentMap<Integer, Channel> LOCAL_CHANNEL_MAP = new ConcurrentHashMap<>();
 
 		private EventLoopGroup eventGroup = new NioEventLoopGroup();
 		private Bootstrap cb = new Bootstrap();
@@ -161,8 +159,7 @@ public class SingleConnectBackendServer implements Runnable {
 		}
 	}
 
-	public static class LocalServerHandelr extends ChannelInboundHandlerAdapter {
-		private static final Logger log = LoggerFactory.getLogger(LocalServerHandelr.class);
+	class LocalServerHandelr extends ChannelInboundHandlerAdapter {
 
 		@Override
 		public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -171,7 +168,7 @@ public class SingleConnectBackendServer implements Runnable {
 		}
 	}
 
-	public static class LocalClientHandler extends ChannelInboundHandlerAdapter {
+	class LocalClientHandler extends ChannelInboundHandlerAdapter {
 
 		@Override
 		public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -188,25 +185,6 @@ public class SingleConnectBackendServer implements Runnable {
 				fChannel.writeAndFlush(out);
 			} finally {
 				ReferenceCountUtil.safeRelease(in);
-			}
-		}
-
-	}
-
-	public static class ProxyMessageDecoder extends ByteToMessageDecoder {
-
-		@Override
-		protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
-			in.markReaderIndex();
-			try {
-				int channelHashCode = in.readInt();
-				int bodyLength = in.readInt();
-				ByteBuf buf = ctx.alloc().buffer(bodyLength);
-				in.readBytes(buf, bodyLength);
-
-				out.add(new ProxyMessage(channelHashCode, bodyLength, buf));
-			} catch (Exception e) {
-				in.resetReaderIndex();
 			}
 		}
 

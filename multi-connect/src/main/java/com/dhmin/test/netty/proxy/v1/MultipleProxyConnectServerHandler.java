@@ -1,4 +1,4 @@
-package com.dhmin.test.netty.proxy.multiplexing.multiconnect;
+package com.dhmin.test.netty.proxy.v1;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,8 +14,8 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 /**
  * @author DHMin
  */
-public class MultiConnectServerHandler extends ChannelInboundHandlerAdapter {
-	private static final Logger log = LoggerFactory.getLogger(MultiConnectServerHandler.class);
+public class MultipleProxyConnectServerHandler extends ChannelInboundHandlerAdapter {
+	private static final Logger log = LoggerFactory.getLogger(MultipleProxyConnectServerHandler.class);
 
 	private static final String BACKEND_ADDR = "127.0.0.1";
 	private static final int BACKEND_PORT = 11000;
